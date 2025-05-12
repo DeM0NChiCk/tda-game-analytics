@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Game Analytics SDK Demo</title>
+</head>
+<body>
+<h1>Game Analytics SDK Test</h1>
+<script src="https://cdn.jsdelivr.net/npm/tda-game-sdk-v1.0@1.0.2/dist/tda-sdk.umd.min.js"></script>
+<script>
+    const analytics = new TDAGameAnalyticsSDK({
+        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ0ZGEuc2RrIiwiaXNzIjoidGRhLmFuYWx5dGljcyIsImFwaUtleSI6IjY2ZTI1Mzk1LTY2MGEtNDhkOS04YjAyLTc2Y2I1ZDFhYTg5YyJ9.X5nec3BvM7hBWRIkf4NkprkcCT5F56_oe0XFdIYNZ44",
+        gameId: "my-awesome-game",
+        httpEndpoint: "http://127.0.0.1:8080/collect",
+        wsEndpoint: "ws://localhost:8080/ws/metrics"
+    });
+
+    analytics.track("level_start", { level: 2 });
+</script>
+</body>
+</html>
