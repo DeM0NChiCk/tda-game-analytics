@@ -8,5 +8,8 @@ import org.bson.types.ObjectId
 @Serializable
 data class User(
     @BsonId @Contextual val id: ObjectId = ObjectId(),
-    val apiKey: String
+    val apiKey: String,
+    val email: String,
+    val hashedPassword: String,
+    val createdAt: Long = System.currentTimeMillis()
 )

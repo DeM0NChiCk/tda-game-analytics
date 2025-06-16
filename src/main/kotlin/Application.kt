@@ -12,6 +12,7 @@ import io.ktor.server.websocket.*
 import ru.itis.tda.auth.*
 import ru.itis.tda.routes.authRoutes
 import ru.itis.tda.routes.collectRoutes
+import ru.itis.tda.routes.heatmapRoute
 import ru.itis.tda.routes.webSocketRoutes
 
 fun main(args: Array<String>) {
@@ -50,6 +51,7 @@ fun Application.module() {
         authenticate("auth-jwt") {
             collectRoutes()
             webSocketRoutes()
+            heatmapRoute()
         }
     }
 }

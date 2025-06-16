@@ -35,12 +35,13 @@ dependencies {
     implementation("io.ktor:ktor-server-websockets")
     implementation("io.ktor:ktor-server-cors")
 
+    implementation("org.mindrot:jbcrypt:0.4")
+
     implementation("ch.qos.logback:logback-classic:$logback_version")
 
     implementation("io.ktor:ktor-server-config-yaml")
 
     implementation("org.litote.kmongo:kmongo-coroutine:$kmongo_version")
-
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_json_version")
 
