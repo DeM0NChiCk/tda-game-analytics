@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Лови Кружки!</title>
+    <style>
+        body { margin: 0; font-family: sans-serif; background: #f0f0f0; text-align: center; }
+        #gameCanvas { display: none; position: relative; width: 800px; height: 600px; margin: 20px auto; background: #fff; border: 2px solid #000; overflow: hidden; }
+        .circle, .square, .green-square { position: absolute; width: 50px; height: 50px; cursor: pointer; }
+        .circle { background: #4caf50; border-radius: 50%; }
+        .square { background: #f44336; }
+        .green-square { background: #8bc34a; }
+        #menu, #result { margin-top: 50px; }
+        button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+        #scoreBoard { font-size: 18px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+<div id="menu">
+    <h1>Лови Кружки!</h1>
+    <p id="bestScoreDisplay"></p>
+    <button onclick="startGame(1)">Играть: Уровень 1</button>
+    <button onclick="startGame(2)">Играть: Уровень 2</button>
+    <button onclick="showRules()">Правила</button>
+</div>
+
+<div id="rules" style="display:none;">
+    <p>Цель: поймать 5 кружков, избегая квадратов. Поймал 3 квадрата — проиграл.<br>После 5 кружков нажми 5 раз по финальному кружку, чтобы победить!<br>Уровень 2: быстрее квадраты и финальный кружок двигается чаще.<br>В финале появляются зелёные квадраты, которых тоже нельзя ловить.</p>
+    <button onclick="hideRules()">Назад</button>
+</div>
+
+<div id="scoreBoard"></div>
+<div id="gameCanvas"></div>
+<div id="result" style="display:none;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/tda-game-sdk-v1.0@1.0.9/dist/tda-sdk.umd.min.js"></script>
+<script>
+    const analytics = new TDAGameAnalyticsSDK({
+        token: "51110af0197a45ccb488b708d1869325",
+        gameId: "685d409c108b3c17a34e10a2",
+        httpEndpoint: "http://127.0.0.1:8080/collect",
+        wsEndpoint: "ws://127.0.0.1:8080/ws/metrics",
+        fpsAggInterval: 60 * 1000
+    });
+
+    const canvas = document.getElementById("gameCanvas");
+    const result = document.getElementById("result");
+    const menu = document.getElementById("menu");
+    const rules = document.getElementById("rules");
+    const scoreBoard = document.getElementById("scoreBoard");
+    const bestScoreDisplay = document.getElementById("bestScoreDisplay");
+
+    let circleCount, squareCount, finalClicks, gameOver, animationFrame, squareIntervals, finalInterval, level, score, startTime, heatmapPoints;
+    let bestScore = localStorage.getItem("bestScore") || 0;
+    bestScoreDisplay.innerText = `Лучший результат: ${bestScore}`;
+
+    function showRules() {
+        analytics.trackFixation({ x: 0, y: 0, duration: 3000, aoi: "rules_button" }); // 📘
+        menu.style.display = "none";
+        rules.style.display = "block";
+    }
+
+    function hideRules() {
+        rules.style.display = "none";
+        menu.style.display = "block";
+    }
+
+    function startGame(lvl) {
+        analytics.trackFixation({ x: 0, y: 0, duration: 3000, aoi: lvl === 1 ? "level1_button" : "level2_button" }); // 🕹️
+        level = lvl;
+        heatmapPoints = [];
+        cancelAnimationFrame(animationFrame);
+        squareIntervals = [];
+        finalClicks = 0;
+        squareCount = 0;
+        circleCount = 0;
+        score = 0;
+        gameOver = false;
+        clearInterval(finalInterval);
+        menu.style.display = "none";
+        result.style.display = "none";
+        canvas.innerHTML = "";
+        canvas.style.display = "block";
+        scoreBoard.style.display = "block";
+        startTime = Date.now();
+        updateScore();
+        analytics.track("level_start", { level });
+        spawnMovingCircle();
+        for (let i = 0; i < (level === 2 ? 4 : 2); i++) setTimeout(spawnSquares, i * 500);
+    }
+
+    function updateScore() {
+        scoreBoard.innerText = `Очки: ${score} | Пропущено квадратов: ${squareCount}`;
+    }
+
+    function spawnMovingCircle() {
+        const circle = document.createElement("div");
+        circle.className = "circle";
+        canvas.appendChild(circle);
+        let x = Math.random() * (canvas.clientWidth - 50);
+        let y = Math.random() * (canvas.clientHeight - 50);
+        let dx = (Math.random() < 0.5 ? -1 : 1) * 2;
+        let dy = (Math.random() < 0.5 ? -1 : 1) * 2;
+
+        function animate() {
+            if (gameOver) return circle.remove();
+            x += dx;
+            y += dy;
+            if (x <= 0 || x >= canvas.clientWidth - 50) dx *= -1;
+            if (y <= 0 || y >= canvas.clientHeight - 50) dy *= -1;
+            circle.style.left = x + "px";
+            circle.style.top = y + "px";
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        circle.onclick = () => {
+            if (gameOver) return;
+            const clickX = x + 25, clickY = y + 25;
+            heatmapPoints.push({ x: clickX, y: clickY, z: 0 });
+            analytics.trackFixation({ x: clickX, y: clickY, duration: 500, aoi: "moving_circle" }); // 🟢
+            analytics.trackFixation({ x: clickX, y: clickY, duration: 1000, aoi: "green_circle_caught" }); // 🟢 доп
+            circle.remove();
+            cancelAnimationFrame(animationFrame);
+            circleCount++;
+            score += 10;
+            updateScore();
+            if (circleCount >= 5) spawnFinalCircle(); else spawnMovingCircle();
+        };
+    }
+
+    function spawnSquares(type = "square") {
+        if (gameOver) return;
+        const square = document.createElement("div");
+        square.className = type;
+        canvas.appendChild(square);
+        let x = Math.random() * (canvas.clientWidth - 50);
+        let y = Math.random() * (canvas.clientHeight - 50);
+        let speed = level === 2 ? 3 : 1;
+        let dx = (Math.random() < 0.5 ? -1 : 1) * speed;
+        let dy = (Math.random() < 0.5 ? -1 : 1) * speed;
+
+        square.style.left = x + "px";
+        square.style.top = y + "px";
+
+        const moveInterval = setInterval(() => {
+            if (gameOver || !square.parentElement) return clearInterval(moveInterval);
+            x += dx;
+            y += dy;
+            if (x <= 0 || x >= canvas.clientWidth - 50) dx *= -1;
+            if (y <= 0 || y >= canvas.clientHeight - 50) dy *= -1;
+            square.style.left = x + "px";
+            square.style.top = y + "px";
+        }, 20);
+
+        squareIntervals.push(moveInterval);
+
+        square.onclick = () => {
+            if (gameOver) return;
+            heatmapPoints.push({ x: x + 25, y: y + 25, z: 0 });
+            if (type === "square") {
+                analytics.trackFixation({ x: x + 25, y: y + 25, duration: 500, aoi: "red_square" }); // 🔴
+            }
+            square.remove();
+            clearInterval(moveInterval);
+            squareCount++;
+            updateScore();
+            analytics.trackTaskResult({ taskId: "catch_square", fail: true });
+            if (squareCount >= 3) endGame("Поражение");
+        };
+
+        setTimeout(() => {
+            if (!gameOver && canvas.contains(square)) {
+                square.remove();
+                clearInterval(moveInterval);
+            }
+        }, 3000);
+
+        if (type === "square") setTimeout(() => spawnSquares("square"), 1000);
+    }
+
+    function spawnFinalCircle() {
+        const final = document.createElement("div");
+        final.className = "circle";
+        canvas.innerHTML = "";
+        canvas.appendChild(final);
+        for (let i = 0; i < 3; i++) setTimeout(() => spawnSquares("green-square"), i * 200);
+
+        analytics.trackStimulusShown({ stimulusId: "final_circle", aoi: "center_area" });
+        analytics.trackTaskStart("final_task");
+
+        function moveFinal() {
+            const x = Math.random() * (canvas.clientWidth - 50);
+            const y = Math.random() * (canvas.clientHeight - 50);
+            final.style.left = x + "px";
+            final.style.top = y + "px";
+        }
+
+        moveFinal();
+        finalInterval = setInterval(moveFinal, level === 2 ? 2000 : 4000);
+
+        final.onclick = () => {
+            if (gameOver) return;
+            const clickX = parseFloat(final.style.left) + 25;
+            const clickY = parseFloat(final.style.top) + 25;
+            heatmapPoints.push({ x: clickX, y: clickY, z: 0 });
+            finalClicks++;
+            score += 5;
+            updateScore();
+            analytics.trackFixation({ x: clickX, y: clickY, duration: 500, aoi: "final_circle" });
+            if (finalClicks >= 5) {
+                clearInterval(finalInterval);
+                analytics.trackTaskEnd("final_task");
+                endGame("Победа");
+            }
+        };
+    }
+
+    function endGame(text) {
+        gameOver = true;
+        cancelAnimationFrame(animationFrame);
+        squareIntervals.forEach(clearInterval);
+        clearInterval(finalInterval);
+        canvas.style.display = "none";
+        scoreBoard.style.display = "none";
+
+        const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+        if (score > bestScore) {
+            bestScore = score;
+            localStorage.setItem("bestScore", bestScore);
+        }
+        bestScoreDisplay.innerText = `Лучший результат: ${bestScore}`;
+
+        analytics.trackTaskResult({ taskId: "final_task_result", success: text === "Победа", fail: text !== "Победа" });
+        analytics.trackSEQ({ taskId: "final_task_result", rating: Math.floor(Math.random() * 7) + 1 });
+
+        for (let i = 0; i < 20; i++) {
+            heatmapPoints.push({ x: Math.random() * canvas.clientWidth, y: Math.random() * canvas.clientHeight, z: 0 });
+        }
+        analytics.trackHeatmap("level_" + level, heatmapPoints);
+
+        result.innerHTML = `<h2>${text}</h2><p>Очки: ${score}</p><p>Время: ${timeTaken} секунд</p><p>Лучший результат: ${bestScore}</p><button onclick="startGame(${level})">Сыграть ещё раз</button><button onclick="backToMenu()">Выйти в меню</button>`;
+        result.style.display = "block";
+    }
+
+    function backToMenu() {
+        result.style.display = "none";
+        menu.style.display = "block";
+    }
+</script>
+</body>
+</html>
