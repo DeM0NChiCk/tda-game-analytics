@@ -1,5 +1,5 @@
 import { useState } from "react";
-import api from "./api";
+import api from "../auth/api";
 import { useNavigate } from "react-router-dom";
 
 export default function RegisterPage() {

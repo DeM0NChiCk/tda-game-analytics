@@ -1,7 +1,7 @@
 import { useState } from "react";
-import api from "./api";
+import api from "../auth/api";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../auth/AuthContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -13,7 +13,7 @@ export default function LoginPage() {
     try {
       const res = await api.post("/login", { email, password });
       setToken(res.data.token);
-      navigate("/dashboard");
+      navigate("/profile");
     } catch (e) {
       alert("Login failed.");
     }

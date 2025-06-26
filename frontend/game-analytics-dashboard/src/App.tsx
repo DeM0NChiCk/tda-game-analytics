@@ -3,10 +3,12 @@ import React from 'react';
 import './App.css';
 
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { AuthProvider } from "./AuthContext";
-import LoginPage from "./LoginPage";
-import RegisterPage from "./RegisterPage";
-import Dashboard from "./Dashboard";
+import { AuthProvider } from "./auth/AuthContext";
+import LoginPage from "./page/LoginPage";
+import RegisterPage from "./page/RegisterPage";
+import Dashboard from "./page/Dashboard";
+import Profile from "./page/ProfilePage";
+import AnalyticsPage from "./page/AnalyticsPage";
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </BrowserRouter>

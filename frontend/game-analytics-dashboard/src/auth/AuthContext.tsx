@@ -11,14 +11,14 @@ const AuthContext = createContext<AuthContextType>({ token: null, setToken: () =
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setTokenState] = useState<string | null>(() => localStorage.getItem("token"));
+  const [token, setTokenState] = useState<string | null>(() => localStorage.getItem("jwt"));
 
   const setToken = (token: string | null) => {
     setTokenState(token);
     if (token) {
-      localStorage.setItem("token", token);
+      localStorage.setItem("jwt", token);
     } else {
-      localStorage.removeItem("token");
+      localStorage.removeItem("jwt");
     }
     setAuthToken(token);
   };
