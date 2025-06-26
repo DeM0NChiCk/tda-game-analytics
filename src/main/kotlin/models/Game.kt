@@ -1,15 +1,14 @@
 package ru.itis.tda.models
 
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.types.ObjectId
 
 @Serializable
-data class User(
+data class Game (
     @BsonId @Contextual val id: ObjectId = ObjectId(),
-    val apiKey: String,
-    val email: String,
-    val hashedPassword: String,
-    val createdAt: Long = System.currentTimeMillis(),
+    val ownerApiKey: String,
+    val name: String,
+    val createdAt: Long = System.currentTimeMillis()
 )

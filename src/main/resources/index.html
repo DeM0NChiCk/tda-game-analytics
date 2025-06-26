@@ -6,16 +6,61 @@
 </head>
 <body>
 <h1>Game Analytics SDK Test</h1>
-<script src="https://cdn.jsdelivr.net/npm/tda-game-sdk-v1.0@1.0.2/dist/tda-sdk.umd.min.js"></script>
+
+<!-- Подключаем твою сборку SDK -->
+<script src="https://cdn.jsdelivr.net/npm/tda-game-sdk-v1.0@1.0.9/dist/tda-sdk.umd.min.js"></script>
+
 <script>
+    // Инициализируем SDK с нужными параметрами
     const analytics = new TDAGameAnalyticsSDK({
-        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ0ZGEuc2RrIiwiaXNzIjoidGRhLmFuYWx5dGljcyIsImFwaUtleSI6IjY2ZTI1Mzk1LTY2MGEtNDhkOS04YjAyLTc2Y2I1ZDFhYTg5YyJ9.X5nec3BvM7hBWRIkf4NkprkcCT5F56_oe0XFdIYNZ44",
-        gameId: "my-awesome-game",
+        token: "51110af0197a45ccb488b708d1869325",
+        gameId: "685afef34720641ae2dcbb57",
         httpEndpoint: "http://127.0.0.1:8080/collect",
-        wsEndpoint: "ws://localhost:8080/ws/metrics"
+        wsEndpoint: "ws://127.0.0.1:8080/ws/metrics",
+        fpsAggInterval: 1 * 60 * 1000
     });
 
-    analytics.track("level_start", { level: 2 });
+
+    // Пример отслеживания начала уровня
+    analytics.track("level_start", { level: 3 });
+
+    // Пример: фиксация взгляда (глазодвижение)
+    analytics.trackFixation({
+        x: 120,
+        y: 300,
+        duration: 10000,
+        aoi: "enemy_button"
+    });
+
+    // Пример: результат задачи
+    analytics.trackTaskResult({
+        taskId: "tutorial-step-9",
+        fail: true
+    });
+
+    // Пример: фиксация на стимуле
+    analytics.trackStimulusShown({
+        stimulusId: "stim-002",
+        aoi: "btn_continue"
+    });
+
+    // Пример: SEQ-оценка
+    analytics.trackSEQ({
+        taskId: "tutorial-step-2",
+        rating: 7
+    });
+
+    // Пример: отслеживание тепловой карты (вокселей)
+    analytics.trackHeatmap("level_3", [
+        { x: 20, y: 22, z: 33 },
+        { x: 40, y: 32, z: 40 }
+    ]);
+
+    // Пример: запуск и завершение задачи с таймером
+    analytics.trackTaskStart("final-fight");
+    setTimeout(() => {
+        analytics.trackTaskEnd("final-fight");
+    }, 5000);
 </script>
 </body>
 </html>

@@ -9,11 +9,12 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
+import org.litote.kmongo.coroutine.CoroutineCollection
 import ru.itis.tda.auth.*
-import ru.itis.tda.routes.authRoutes
-import ru.itis.tda.routes.collectRoutes
-import ru.itis.tda.routes.heatmapRoute
-import ru.itis.tda.routes.webSocketRoutes
+import ru.itis.tda.db.MongoClientProvider
+import ru.itis.tda.models.Game
+import ru.itis.tda.models.User
+import ru.itis.tda.routes.*
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
@@ -21,12 +22,12 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
     install(CORS) {
-        anyHost() // Разрешает запросы с любого хоста; для безопасности в продакшене укажите конкретные хосты
-        allowMethod(HttpMethod.Options) // Разрешает preflight-запросы
-        allowMethod(HttpMethod.Post) // Разрешает POST-запросы
-        allowHeader(HttpHeaders.ContentType) // Разрешает заголовок Content-Type
-        allowHeader(HttpHeaders.Authorization) // Разрешает заголовок Authorization
-        allowCredentials = true // Разрешает передачу учетных данных (например, cookies)
+        anyHost()
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Post)
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Authorization)
+        allowCredentials = true
     }
 
     install(ContentNegotiation) {
@@ -45,13 +46,17 @@ fun Application.module() {
         }
     }
 
-    routing {
+    val mongoGames: CoroutineCollection<Game> = MongoClientProvider.games
+    val mongoUsers: CoroutineCollection<User> = MongoClientProvider.users
 
+    routing {
         authRoutes()
+        webSocketRoutes(mongoGames)
+        collectRoutes(mongoGames)
         authenticate("auth-jwt") {
-            collectRoutes()
-            webSocketRoutes()
-            heatmapRoute()
+            heatmapRoute(mongoGames)
+            gameRoute(mongoUsers, mongoGames)
+            analyticsRoutes(mongoGames)
         }
     }
 }

@@ -9,7 +9,7 @@ object AuthConfig {
     private const val audience = "tda.sdk"
     const val realm = "tda"
 
-    val algorithm = Algorithm.HMAC256(secret)
+    private val algorithm = Algorithm.HMAC256(secret)
 
     val verifier = JWT.require(algorithm)
         .withIssuer(issuer)
