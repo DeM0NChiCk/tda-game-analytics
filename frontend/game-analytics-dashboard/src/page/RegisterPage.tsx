@@ -1,6 +1,8 @@
 import { useState } from "react";
 import api from "../auth/api";
 import { useNavigate } from "react-router-dom";
+import logo from "../logo192.png";
+import "./RegisterPage.css";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -18,11 +20,38 @@ export default function RegisterPage() {
   };
 
   return (
-    <div>
-      <h2>Register (Game Developer)</h2>
-      <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-      <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-      <button onClick={handleRegister}>Register</button>
+    <div className="register-page">
+      <div className="register-container">
+        <img src={logo} alt="TDA Logo" className="register-logo" />
+        <h2 className="register-title">TDA Analytics Game</h2>
+        <h3 className="register-title">Разработчик игр зарегистрируйся!</h3>
+
+        <input
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          className="register-input"
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          className="register-input"
+        />
+
+        <button onClick={handleRegister} className="register-button">
+          Register
+        </button>
+
+        <p>
+          У вас уже есть аккаунт?{" "}
+          <button onClick={() => navigate("/login")} className="register-link">
+            Войти здесь
+          </button>
+        </p>
+      </div>
     </div>
   );
 }

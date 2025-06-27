@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import api from "../auth/api";
 import HeatmapViewer from "./HeatmapViewer";
+import "./Dashboard.css";
 
 export default function Dashboard() {
     const { token } = useAuth();
@@ -36,28 +37,17 @@ export default function Dashboard() {
     }, [selectedGame]);
 
     return (
-        <div style={{ padding: "1rem" }}>
-            <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "1rem"
-            }}>
-                <h2>Heatmap Dashboard</h2>
-                <button onClick={() => navigate("/profile")}>
+        <div className="dashboard-page">
+            <div className="dashboard-header">
+                <h2>Панель управления тепловой картой</h2>
+                <button onClick={() => navigate("/profile")} className="dashboard-button">
                     Профиль
                 </button>
             </div>
 
-            <div style={{
-                display: "flex",
-                gap: "1rem",
-                marginBottom: "1rem",
-                flexWrap: "wrap",
-                alignItems: "center"
-            }}>
+            <div className="dashboard-controls">
                 <select value={selectedGame ?? ""} onChange={e => setSelectedGame(e.target.value || null)}>
-                    <option value="">-- Select Game --</option>
+                    <option value="">-- Выберите игру --</option>
                     {games.map(g => (
                         <option key={g.id} value={g.id}>{g.game_name}</option>
                     ))}
@@ -68,15 +58,21 @@ export default function Dashboard() {
                     onChange={e => setSelectedLocation(e.target.value || null)}
                     disabled={!selectedGame}
                 >
-                    <option value="">-- Select Location --</option>
+                    <option value="">-- Выберите локацию --</option>
                     {locations.map(loc => (
                         <option key={loc} value={loc}>{loc}</option>
                     ))}
                 </select>
 
                 <label>
-                    Density:
-                    <input type="range" min="5" max="60" value={bins} onChange={e => setBins(Number(e.target.value))} />
+                    Плотность:
+                    <input
+                        type="range"
+                        min="5"
+                        max="60"
+                        value={bins}
+                        onChange={e => setBins(Number(e.target.value))}
+                    />
                 </label>
             </div>
 

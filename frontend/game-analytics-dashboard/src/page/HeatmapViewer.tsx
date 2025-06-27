@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import api from "../auth/api";
+import "./HeatmapViewer.css";
 
 interface Props {
     gameId: string;
@@ -52,6 +53,8 @@ export default function HeatmapViewer({ gameId, location, bins }: Props) {
         const voxels = new THREE.Group();
         scene.add(voxels);
 
+        let boundingBoxHelper: THREE.BoxHelper | null = null;
+
         const valueToColor = (v: number, max: number) =>
             new THREE.Color(`hsl(${120 - 120 * v / max}, 80%, 50%)`);
 
@@ -66,6 +69,11 @@ export default function HeatmapViewer({ gameId, location, bins }: Props) {
                 }
             });
             voxels.clear();
+
+            if (boundingBoxHelper) {
+                scene.remove(boundingBoxHelper);
+                boundingBoxHelper.geometry.dispose();
+            }
         }
 
         function animate() {
@@ -129,6 +137,9 @@ export default function HeatmapViewer({ gameId, location, bins }: Props) {
                         voxels.add(mesh);
                     });
 
+                    boundingBoxHelper = new THREE.BoxHelper(voxels, 0xffff00);
+                    scene.add(boundingBoxHelper);
+
                     controls.target.set(0, 0, 0);
                     controls.update();
 
@@ -155,5 +166,5 @@ export default function HeatmapViewer({ gameId, location, bins }: Props) {
         };
     }, [gameId, location, bins]);
 
-    return <div ref={containerRef} style={{ width: "100%", height: "80vh", background: "#111" }} />;
+    return <div ref={containerRef} className="heatmap-container" />;
 }

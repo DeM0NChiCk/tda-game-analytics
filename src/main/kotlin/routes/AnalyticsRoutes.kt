@@ -38,7 +38,7 @@ suspend fun ApplicationCall.handleTaskSuccess(gameCollection: CoroutineCollectio
             .projection(GameEvent::data)
             .toList()
 
-        val stats = mutableMapOf<String, MutableMap<String, Int>>() // taskId -> { success, fail, abandoned }
+        val stats = mutableMapOf<String, MutableMap<String, Int>>()
 
         results.forEach { doc ->
             try {
@@ -74,7 +74,6 @@ suspend fun ApplicationCall.handleTaskSuccess(gameCollection: CoroutineCollectio
                 }
 
             } catch (_: Exception) {
-                // можно логировать ошибку
             }
         }
 
@@ -168,7 +167,6 @@ suspend fun ApplicationCall.handleFixationAreas(gameCollection: CoroutineCollect
                 stats.coordinates.add(AOICoordinate(x, y))
 
             } catch (_: Exception) {
-                // пропускаем некорректные документы
             }
         }
 
@@ -297,7 +295,6 @@ suspend fun ApplicationCall.handleFpsAverage(gameCollection: CoroutineCollection
                 )
 
             } catch (_: Exception) {
-                // Пропускаем некорректные записи
             }
         }
 
@@ -331,7 +328,6 @@ suspend fun ApplicationCall.handleClientInfo(gameCollection: CoroutineCollection
                 languageCounts[language] = languageCounts.getOrDefault(language, 0) + 1
 
             } catch (_: Exception) {
-                // Пропускаем ошибочные документы
             }
         }
 

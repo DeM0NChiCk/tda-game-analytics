@@ -18,7 +18,6 @@ object MongoClientProvider {
 
     init {
         runBlocking {
-            // Ensure time-series collection exists
             val collections = database.listCollectionNames().toList()
             if (!collections.contains("events")) {
                 database.createCollection("events", CreateCollectionOptions().timeSeriesOptions(

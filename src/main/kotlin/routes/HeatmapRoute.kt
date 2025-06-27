@@ -23,7 +23,6 @@ fun Route.heatmapRoute(gameCollection: CoroutineCollection<Game>) {
 
         val apiKey = call.principal<JWTPrincipal>()?.getClaim("apiKey", String::class)
 
-        // Проверка обязательных параметров
         if (gameId.isNullOrBlank() || location.isNullOrBlank()) {
             call.respond(HttpStatusCode.BadRequest, ErrorResponse("Missing gameId or location"))
             return@get
@@ -34,7 +33,6 @@ fun Route.heatmapRoute(gameCollection: CoroutineCollection<Game>) {
             return@get
         }
 
-        // Проверка существования игры и принадлежности пользователю
         val game = gameCollection.findOne(
             and(
                 Game::id eq ObjectId(gameId),
@@ -52,16 +50,13 @@ fun Route.heatmapRoute(gameCollection: CoroutineCollection<Game>) {
             return@get
         }
 
-        // Генерация тепловой карты
         val response = heatmapService(game = game.id.toHexString(), location = location, bins = bins)
 
-        // Если локация не найдена или пуста
         if (response.location.isNullOrEmpty()) {
             call.respond(response)
             return@get
         }
 
-        // Ответ
         call.respond(response)
     }
 }

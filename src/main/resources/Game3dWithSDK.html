@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>3D Тир с аналитикой</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; }
+        canvas { display: block; }
+        #hud { position: absolute; top: 10px; left: 10px; color: white; font-size: 20px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; z-index: 10; }
+        #startButton { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 20px 40px; font-size: 24px; background: #4caf50; color: white; border: none; border-radius: 10px; cursor: pointer; z-index: 20; }
+        #result { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 28px; text-align: center; background: rgba(0,0,0,0.7); padding: 30px; border-radius: 12px; display: none; z-index: 30; }
+        #result button { font-size: 20px; padding: 12px 24px; margin-top: 20px; background: #4caf50; border: none; color: white; border-radius: 10px; cursor: pointer; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/tda-game-sdk-v1.0@1.0.9/dist/tda-sdk.umd.min.js"></script>
+</head>
+<body>
+<div id="hud">
+    Очки: <span id="score">0</span><br>
+    Время: <span id="timer">60</span> сек
+</div>
+
+<button id="startButton">Начать игру</button>
+
+<div id="result">
+    <div id="finalText"></div>
+    <button id="restartButton">Сыграть ещё раз</button>
+</div>
+
+<script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three/build/three.module.js" } }
+</script>
+
+<script type="module">
+    import {
+        Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight,
+        SphereGeometry, MeshStandardMaterial, Mesh,
+        Raycaster, Vector2, Color
+    } from 'three';
+
+    const analytics = new TDAGameAnalyticsSDK({
+        token: "51110af0197a45ccb488b708d1869325",
+        gameId: "685dd6411b4051668b78ae51",
+        httpEndpoint: "http://127.0.0.1:8080/collect",
+        wsEndpoint: "ws://127.0.0.1:8080/ws/metrics",
+        fpsAggInterval: 60 * 1000
+    });
+
+    const width = window.innerWidth, height = window.innerHeight;
+    let score = 0, timeLeft = 60, targets = [], gameRunning = false, timerInterval;
+    const raycaster = new Raycaster(), mouse = new Vector2();
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
+    const startButton = document.getElementById('startButton');
+    const restartButton = document.getElementById('restartButton');
+    const resultBox = document.getElementById('result'), finalText = document.getElementById('finalText');
+
+    const scene = new Scene(); scene.background = new Color(0x111111);
+    const camera = new PerspectiveCamera(70, width / height, 0.1, 100); camera.position.z = 20;
+    const light = new DirectionalLight(0xffffff, 1); light.position.set(5, 10, 7.5); scene.add(light);
+    const renderer = new WebGLRenderer({ antialias: true });
+    renderer.setSize(width, height); document.body.appendChild(renderer.domElement);
+
+    function spawnTarget(type) {
+        const geo = new SphereGeometry(type === 'red' ? 1 : 0.8, 32, 32);
+        const mat = new MeshStandardMaterial({ color: type === 'red' ? 0xff3333 : 0x33ff33 });
+        const mesh = new Mesh(geo, mat);
+        mesh.userData = {
+            type,
+            vx: (Math.random() - 0.5) * 0.08,
+            vy: (Math.random() - 0.5) * 0.08,
+            vz: (Math.random() - 0.5) * 0.08
+        };
+        mesh.position.set((Math.random() - 0.5) * 30, (Math.random() - 0.5) * 15, (Math.random() - 0.5) * 10);
+        scene.add(mesh);
+        targets.push(mesh);
+
+        analytics.trackStimulusShown({ stimulusId: type + "_spawn", aoi: type + "_area" });
+    }
+
+    function resetGame() {
+        targets.forEach(t => scene.remove(t));
+        targets = [];
+        score = 0;
+        timeLeft = 60;
+        scoreDisplay.textContent = score;
+        timerDisplay.textContent = timeLeft;
+    }
+
+    function startGame() {
+        resetGame();
+        startButton.style.display = 'none';
+        resultBox.style.display = 'none';
+        gameRunning = true;
+
+        analytics.track("game_start", { timestamp: Date.now() });
+        analytics.trackTaskStart("game");
+
+        for (let i = 0; i < 5; i++) spawnTarget('red');
+        for (let i = 0; i < 3; i++) spawnTarget('green');
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.textContent = timeLeft;
+            if (timeLeft <= 0) endGame();
+        }, 1000);
+    }
+
+    function endGame() {
+        clearInterval(timerInterval);
+        gameRunning = false;
+
+        analytics.trackTaskEnd("game");
+        analytics.track("game_end", { score, timeLeft });
+        analytics.trackSEQ({ taskId: "game", rating: Math.floor(Math.random() * 7) + 1 });
+
+        finalText.innerHTML = `<h2>Игра окончена!</h2><p>Ваш счёт: ${score}</p>`;
+        resultBox.style.display = 'block';
+    }
+
+    function onMouseClick(event) {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObjects(targets);
+
+        if (!gameRunning) {
+            analytics.trackFixation({
+                x: event.clientX,
+                y: event.clientY,
+                duration: 500,
+                aoi: event.target.id || 'canvas'
+            });
+            return;
+        }
+
+        if (hits.length) {
+            const hit = hits[0].object;
+            const type = hit.userData.type;
+
+            if (type === 'green') {
+                analytics.trackHeatmap("level1", [{
+                    x: hit.position.x,
+                    y: hit.position.y,
+                    z: hit.position.z,
+                    value: 1
+                }]);
+            }
+
+            analytics.trackFixation({
+                x: event.clientX,
+                y: event.clientY,
+                duration: 500,
+                aoi: type + "_target",
+                stimulusId: type + "_hit"
+            });
+
+            analytics.trackTaskResult({
+                taskId: "hit_" + type,
+                success: type === 'red',
+                fail: type !== 'red'
+            });
+
+            targets.splice(targets.indexOf(hit), 1);
+            scene.remove(hit);
+
+            if (type === 'red') {
+                score++;
+                spawnTarget('red');
+            } else {
+                score -= 5;
+                spawnTarget('green');
+            }
+
+            scoreDisplay.textContent = score;
+        } else {
+            analytics.trackHeatmap("level1", [{
+                x: mouse.x,
+                y: mouse.y,
+                z: 0,
+                value: 1
+            }]);
+        }
+    }
+
+    window.addEventListener('click', onMouseClick);
+
+    renderer.setAnimationLoop(() => {
+        targets.forEach(t => {
+            ['x', 'y', 'z'].forEach(axis => {
+                t.position[axis] += t.userData['v' + axis];
+                if (Math.abs(t.position[axis]) > { x: 15, y: 8, z: 10 }[axis]) {
+                    t.userData['v' + axis] *= -1;
+                }
+            });
+            t.rotation.x += 0.01;
+            t.rotation.y += 0.01;
+        });
+        renderer.render(scene, camera);
+    });
+
+    window.addEventListener('resize', () => {
+        const w = window.innerWidth, h = window.innerHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+    });
+
+    startButton.addEventListener('click', () => {
+        analytics.track("click", { aoi: "startButton" });
+        startGame();
+    });
+
+    restartButton.addEventListener('click', () => {
+        analytics.track("click", { aoi: "restartButton" });
+
+        if (score < 50) {
+            analytics.trackTaskResult({
+                taskId: "game",
+                abandoned: true
+            });
+        }
+
+        startGame();
+    });
+</script>
+</body>
+</html>

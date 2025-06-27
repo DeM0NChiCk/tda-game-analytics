@@ -40,7 +40,7 @@ fun Route.collectRoutes(gameCollection: CoroutineCollection<Game>) {
         }
 
         try {
-            val events = call.receive<List<GameEvent>>()  // ✅ теперь принимаем массив
+            val events = call.receive<List<GameEvent>>()
 
             for (event in events) {
                 if (event.gameId != gameId) {
@@ -51,7 +51,7 @@ fun Route.collectRoutes(gameCollection: CoroutineCollection<Game>) {
                     return@post
                 }
 
-                MongoClientProvider.events.insertOne(event) // ✅ сохраняем по одному
+                MongoClientProvider.events.insertOne(event)
 
                 println("Событие принято: ${event.type}")
             }

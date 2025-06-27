@@ -1,5 +1,3 @@
-// AnalyticsPage.tsx — улучшенная версия
-
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../auth/api";
@@ -7,6 +5,7 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
   CartesianGrid, Legend, ResponsiveContainer, ScatterChart, Scatter
 } from "recharts";
+import "./AnalyticsPage.css";
 
 export default function AnalyticsPage() {
   const location = useLocation();
@@ -93,209 +92,206 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 20
-            }}>
-        <h2>Аналитика для игры ID: {gameId}</h2>
-        <button onClick={() => navigate("/profile")}>
-            Профиль
-        </button>
-      </div>
+    <div className="analytics-page">
+      <div className="analytics-container">
+        <div style={{ padding: 20 }}>
+          <div className="analytics-header">
+            <h2>Аналитика для игры ID: {gameId}</h2>
+            <button className="analytics-button" onClick={() => navigate("/profile")}>
+                Профиль
+            </button>
+          </div>
 
-      <h4>Глобальная статистика</h4>
-      <ul>
-        {Object.entries(globalStats).map(([key, value]) => (
-          <li key={key}>{key}: {value}</li>
-        ))}
-      </ul>
+          <h4>Глобальная статистика</h4>
+          <ul>
+            {Object.entries(globalStats).map(([key, value]) => (
+              <li key={key}>{key}: {value}</li>
+            ))}
+          </ul>
 
-      <h3>Средняя продолжительность фиксации</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={taskDurationData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="taskId" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="average" stroke="#8884d8" />
-          <Line type="monotone" dataKey="min" stroke="#82ca9d" />
-          <Line type="monotone" dataKey="max" stroke="#ff7300" />
-        </LineChart>
-      </ResponsiveContainer>
-
-      <h3>Динамика кадров в секунду (FPS) по сессиям</h3>
-      {Object.entries(fpsGrouped).map(([sessionId, entries]: any, i) => {
-        const intervalMs = entries[0]?.intervalMs || 0;
-        const intervalSec = Math.floor(intervalMs / 1000);
-        const intervalDisplay =
-          intervalSec >= 60
-            ? `${Math.floor(intervalSec / 60)}m ${intervalSec % 60}s`
-            : `${intervalSec}s`;
-
-        return (
-          <details key={sessionId} open={i === 0} style={{ marginBottom: 32 }}>
-            <summary><strong>Сессия: {sessionId}</strong></summary>
-            <p style={{ marginTop: 8 }}><strong>Интервал агрегации:</strong> {intervalDisplay}</p>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={entries}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="count" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="averageFps" stroke="#4caf50" />
-              </LineChart>
-            </ResponsiveContainer>
-          </details>
-        );
-      })}
-
-      <h3>Успешность задачи</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={taskSuccessData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="taskId" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="success" fill="#4caf50" />
-          <Bar dataKey="fail" fill="#f44336" />
-          <Bar dataKey="abandoned" fill="#ff9800" />
-        </BarChart>
-      </ResponsiveContainer>
-
-      <h3>Оценка сложности задачи (SEQ-оценки по 7-балльной шкале)</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={seqRatingsData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="taskId" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="avg" fill="#2196f3" />
-        </BarChart>
-      </ResponsiveContainer>
-
-      <h3>Области фиксации</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={fixationData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="aoi" />
-          <YAxis yAxisId="left" />
-          <YAxis yAxisId="right" orientation="right" />
-          <Tooltip />
-          <Legend />
-          <Bar yAxisId="left" dataKey="count" fill="#9c27b0" />
-          <Bar yAxisId="right" dataKey="avgDuration" fill="#00bcd4" />
-        </BarChart>
-      </ResponsiveContainer>
-
-      <h3>Области фиксации — диаграмма рассеяния</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <ScatterChart
-          margin={{ top: 20, right: 20, bottom: 10, left: 10 }}
-        >
-          <CartesianGrid />
-          <XAxis dataKey="count" name="Количество фиксаций" />
-          <YAxis dataKey="avgDuration" name="Средняя длительность (ms)" />
-          <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-          <Scatter data={fixationData} fill="#8884d8" />
-        </ScatterChart>
-      </ResponsiveContainer>
-
-      <h3>Области фиксации</h3>
-      {(() => {
-        // Вычисляем диапазон attentionScore по всем данным
-        const scores = fixationData.map(d => d.count * d.avgDuration);
-        const maxScore = Math.max(...scores);
-        const minScore = Math.min(...scores);
-        const range = maxScore - minScore;
-
-        // Пороговые значения на основе диапазона
-        const low = minScore + range * 0.33;
-        const high = minScore + range * 0.66;
-
-        return (
-          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
-            <thead>
-              <tr>
-                <th style={{ borderBottom: "1px solid #ccc", textAlign: "left" }}>Области фиксации (AOI)</th>
-                <th style={{ borderBottom: "1px solid #ccc", textAlign: "right" }}>Количество фиксаций</th>
-                <th style={{ borderBottom: "1px solid #ccc", textAlign: "right" }}>Средняя длительность (ms)</th>
-                <th style={{ borderBottom: "1px solid #ccc", textAlign: "center" }}>Уровень внимания</th>
-              </tr>
-            </thead>
-            <tbody>
-              {fixationData.map(({ aoi, count, avgDuration }) => {
-                const attentionScore = count * avgDuration;
-                let emoji = "🟩";
-                let label = "Низкий";
-                if (attentionScore > high) {
-                  emoji = "🟥";
-                  label = "Высокий";
-                } else if (attentionScore > low) {
-                  emoji = "🟨";
-                  label = "Средний";
-                }
-
-                return (
-                  <tr key={aoi}>
-                    <td style={{ padding: "4px 0" }}>{aoi}</td>
-                    <td style={{ textAlign: "right" }}>{count}</td>
-                    <td style={{ textAlign: "right" }}>{avgDuration}</td>
-                    <td style={{ textAlign: "center" }}>{emoji} {label}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        );
-      })()}
-
-      <h3>Количество просмотров областей интереса (AOI) по стимулам</h3>
-      {Object.entries(stimuliGrouped).map(([stimId, data]: any, i) => (
-        <details key={stimId} open={i === 0}>
-          <summary><strong>Stimulus: {stimId}</strong></summary>
+          <h3>Средняя продолжительность фиксации</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data}>
+            <LineChart data={taskDurationData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="aoi" />
+              <XAxis dataKey="taskId" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="count" fill="#795548" />
+              <Line type="monotone" dataKey="average" stroke="#8884d8" />
+              <Line type="monotone" dataKey="min" stroke="#82ca9d" />
+              <Line type="monotone" dataKey="max" stroke="#ff7300" />
+            </LineChart>
+          </ResponsiveContainer>
+
+          <h3>Динамика кадров в секунду (FPS) по сессиям</h3>
+          {Object.entries(fpsGrouped).map(([sessionId, entries]: any, i) => {
+            const intervalMs = entries[0]?.intervalMs || 0;
+            const intervalSec = Math.floor(intervalMs / 1000);
+            const intervalDisplay =
+              intervalSec >= 60
+                ? `${Math.floor(intervalSec / 60)}m ${intervalSec % 60}s`
+                : `${intervalSec}s`;
+
+            return (
+              <details key={sessionId} open={i === 0} style={{ marginBottom: 32 }}>
+                <summary><strong>Сессия: {sessionId}</strong></summary>
+                <p style={{ marginTop: 8 }}><strong>Интервал агрегации:</strong> {intervalDisplay}</p>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={entries}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="count" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="averageFps" stroke="#4caf50" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </details>
+            );
+          })}
+
+          <h3>Успешность задачи</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={taskSuccessData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="taskId" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="success" fill="#4caf50" />
+              <Bar dataKey="fail" fill="#f44336" />
+              <Bar dataKey="abandoned" fill="#ff9800" />
             </BarChart>
           </ResponsiveContainer>
-        </details>
-      ))}
 
-      <h3>Информация о клиентах: Браузеры и устройства</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={userAgentData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" angle={-45} textAnchor="end" interval={0} height={100} />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="count" fill="#607d8b" />
-        </BarChart>
-      </ResponsiveContainer>
+          <h3>Оценка сложности задачи (SEQ-оценки по 7-балльной шкале)</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={seqRatingsData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="taskId" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="avg" fill="#2196f3" />
+            </BarChart>
+          </ResponsiveContainer>
 
-      <h3>Информация о клиентах: Языки</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={languageData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="language" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="count" fill="#3f51b5" />
-        </BarChart>
-      </ResponsiveContainer>
+          <h3>Области фиксации</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={fixationData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="aoi" />
+              <YAxis yAxisId="left" />
+              <YAxis yAxisId="right" orientation="right" />
+              <Tooltip />
+              <Legend />
+              <Bar yAxisId="left" dataKey="count" fill="#9c27b0" />
+              <Bar yAxisId="right" dataKey="avgDuration" fill="#00bcd4" />
+            </BarChart>
+          </ResponsiveContainer>
+
+          <h3>Области фиксации — диаграмма рассеяния</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <ScatterChart
+              margin={{ top: 20, right: 20, bottom: 10, left: 10 }}
+            >
+              <CartesianGrid />
+              <XAxis dataKey="count" name="Количество фиксаций" />
+              <YAxis dataKey="avgDuration" name="Средняя длительность (ms)" />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+              <Scatter data={fixationData} fill="#8884d8" />
+            </ScatterChart>
+          </ResponsiveContainer>
+
+          <h3>Области фиксации</h3>
+          {(() => {
+            const scores = fixationData.map(d => d.count * d.avgDuration);
+            const maxScore = Math.max(...scores);
+            const minScore = Math.min(...scores);
+            const range = maxScore - minScore;
+
+            const low = minScore + range * 0.33;
+            const high = minScore + range * 0.66;
+
+            return (
+              <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
+                <thead>
+                  <tr>
+                    <th style={{ borderBottom: "1px solid #ccc", textAlign: "left" }}>Области фиксации (AOI)</th>
+                    <th style={{ borderBottom: "1px solid #ccc", textAlign: "right" }}>Количество фиксаций</th>
+                    <th style={{ borderBottom: "1px solid #ccc", textAlign: "right" }}>Средняя длительность (ms)</th>
+                    <th style={{ borderBottom: "1px solid #ccc", textAlign: "center" }}>Уровень внимания</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fixationData.map(({ aoi, count, avgDuration }) => {
+                    const attentionScore = count * avgDuration;
+                    let emoji = "🟩";
+                    let label = "Низкий";
+                    if (attentionScore > high) {
+                      emoji = "🟥";
+                      label = "Высокий";
+                    } else if (attentionScore > low) {
+                      emoji = "🟨";
+                      label = "Средний";
+                    }
+
+                    return (
+                      <tr key={aoi}>
+                        <td style={{ padding: "4px 0" }}>{aoi}</td>
+                        <td style={{ textAlign: "right" }}>{count}</td>
+                        <td style={{ textAlign: "right" }}>{avgDuration}</td>
+                        <td style={{ textAlign: "center" }}>{emoji} {label}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            );
+          })()}
+
+          <h3>Количество просмотров областей интереса (AOI) по стимулам</h3>
+          {Object.entries(stimuliGrouped).map(([stimId, data]: any, i) => (
+            <details key={stimId} open={i === 0}>
+              <summary><strong>Stimulus: {stimId}</strong></summary>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="aoi" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="count" fill="#795548" />
+                </BarChart>
+              </ResponsiveContainer>
+            </details>
+          ))}
+
+          <h3>Информация о клиентах: Браузеры и устройства</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={userAgentData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" interval={0} height={100} />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#607d8b" />
+            </BarChart>
+          </ResponsiveContainer>
+
+          <h3>Информация о клиентах: Языки</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={languageData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="language" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#3f51b5" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 }

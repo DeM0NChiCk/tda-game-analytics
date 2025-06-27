@@ -12,11 +12,9 @@ import kotlinx.serialization.Serializable
 import org.bson.BsonDocument
 import org.litote.kmongo.and
 import org.litote.kmongo.eq
-import org.litote.kmongo.include
 import org.bson.types.ObjectId
 
 import org.litote.kmongo.coroutine.CoroutineCollection
-import org.litote.kmongo.*
 import ru.itis.tda.db.MongoClientProvider
 
 import ru.itis.tda.models.Game
@@ -151,18 +149,15 @@ fun Route.gameRoute(
         }
 
         try {
-            // Изменяем подход: получаем только поле data в виде BsonDocument
             val eventsData = MongoClientProvider.events
-                .withDocumentClass<BsonDocument>() // Работаем с сырыми BSON-документами
+                .withDocumentClass<BsonDocument>()
                 .find(and(eq("gameId", gameId), eq("type", "heatmap_voxels")))
-                .projection(GameEvent::data) // Получаем только поле data
+                .projection(GameEvent::data)
                 .toList()
 
             val locations = eventsData.mapNotNull { bsonDoc ->
                 try {
-                    // Извлекаем data как BsonDocument
                     val dataDoc = bsonDoc.getDocument("data")
-                    // Ручное извлечение levelName из BSON-структуры
                     dataDoc?.getDocument("levelName")
                         ?.getString("content")
                         ?.value

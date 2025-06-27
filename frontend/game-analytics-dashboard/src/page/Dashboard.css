@@ -1,0 +1,46 @@
+.dashboard-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0d0d0d, #330066);
+    padding: 2rem;
+    font-family: sans-serif;
+    color: white;
+    box-sizing: border-box;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.dashboard-button {
+    background: #ff0040;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.dashboard-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.dashboard-controls select,
+.dashboard-controls input[type="range"] {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: none;
+}
+
+.dashboard-controls label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: white;
+}

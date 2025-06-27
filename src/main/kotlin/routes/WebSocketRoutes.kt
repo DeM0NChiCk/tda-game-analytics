@@ -28,7 +28,6 @@ fun Route.webSocketRoutes(gameCollection: CoroutineCollection<Game>) {
             return@webSocket
         }
 
-        // Проверка токена в базе
         val game = gameCollection.findOne(
             and(
                 Game::id eq ObjectId(gameId),

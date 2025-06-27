@@ -1,0 +1,77 @@
+.profile-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1c1c1c, #3a0066);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2rem;
+    font-family: sans-serif;
+    color: white;
+}
+
+.profile-container {
+    background: rgba(0, 0, 0, 0.75);
+    padding: 2rem;
+    border-radius: 1rem;
+    margin: 0 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+@media (min-width: 768px) {
+    .profile-container {
+        margin: 0 2rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .profile-container {
+        margin: 0 4rem;
+    }
+}
+
+.profile-header {
+    margin-bottom: 1.5rem;
+}
+
+.profile-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.profile-input {
+    width: calc(100% - 120px);
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    border: none;
+}
+
+.profile-button {
+    padding: 0.5rem 1rem;
+    background: #7b00ff;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.profile-game {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.profile-game button {
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    background: #ff0040;
+    border: none;
+    border-radius: 0.4rem;
+    color: white;
+    cursor: pointer;
+}

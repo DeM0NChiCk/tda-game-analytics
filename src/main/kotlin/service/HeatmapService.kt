@@ -31,24 +31,6 @@ data class Voxel(
     val value: Int
 )
 
-@Serializable
-data class Wrapper(
-    val content: String
-)
-
-@Serializable
-data class VoxelData(
-    val x: Wrapper,
-    val y: Wrapper,
-    val z: Wrapper
-)
-
-@Serializable
-data class EventData(
-    val levelName: Wrapper,
-    val voxels: List<VoxelData>
-)
-
 suspend fun heatmapService(game: String, location: String, bins: Int): HeatmapResponse {
 
     println("Запуск heatmapService для game=$game, location=$location, bins=$bins")

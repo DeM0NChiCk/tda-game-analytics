@@ -67,20 +67,4 @@ fun Route.authRoutes() {
         call.respond(AuthResponse(token = token, apiKey = "Был сообщён при регистрации!"))
     }
 
-    post("/token") {
-        try {
-            val request = call.receive<AuthRequest>()
-            val user = MongoClientProvider.users.findOne(User::apiKey eq request.apiKey)
-            if (user != null) {
-                val token = JwtService.generateToken(request.apiKey)
-                call.respond(mapOf("token" to token))
-            } else {
-                call.respondText("Invalid API key", status = Unauthorized)
-            }
-        } catch (e: Exception) {
-            println("Error processing request: ${e.message}")
-            call.respondText("Invalid request format. Expected: {\"apiKey\": \"your_api_key\"}",
-                status = BadRequest)
-        }
-    }
 }
